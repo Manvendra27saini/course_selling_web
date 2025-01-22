@@ -1,6 +1,2 @@
-// filepath: /Users/manvendra/Developer/Web/course_selling_web/.gitignore
-/node_modules/
-*.env
+node_modules
 .env
-*.env
-.env*
