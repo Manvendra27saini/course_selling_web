@@ -35,7 +35,6 @@ userRouter.post('/signup', async (req, res) => {
     }
 });
 
-
 userRouter.post('/signin', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -66,28 +65,26 @@ userRouter.post('/signin', async (req, res) => {
     }
 });
 
- 
 userRouter.get('/purchases', async (req, res) => {
     try {
-        const userId = req.userId; // Assuming you have middleware that sets `req.userId` from the JWT
-
+        const userId = req.userId; 
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
-
-        // Find all purchases for the logged-in user
-        const purchases = await purchaseModel.find({ user: userId }).populate('course'); // Assuming purchase model links to course
+        const purchases = await purchaseModel.find({ 
+            user: userId 
+        }); 
+        const courseData = await courseModel.find({
+             _id: { $in: purchases.map(p=>p.courseId)}
+            })
 
         if (!purchases) {
             return res.status(404).json({ message: 'No purchases found' });
         }
-
         res.json({
-            purchases: purchases.map(purchase => ({
-                course: purchase.course,
-                date: purchase.date
-            }))
-        });
+            purchases,
+            courseData
+            });
 
     } catch (error) {
         console.error(error);
@@ -98,45 +95,3 @@ userRouter.get('/purchases', async (req, res) => {
 module.exports = {
     userRouter
 };
-
-/*const { Router } = require('express');
-const { userModel, purchaseModel, courseModel } = require("../db");
-
-const userRouter = Router();
-
-    userRouter.post('/signup', async  function(req, res){
-        const {email,password,firstName,lastName} = req.body;
-        await userModel.create({
-            email:email,
-            password:password,
-            firstName:firstName,
-            lastName:lastName
-        })
-        res.json({
-            message : "Signed Up Successfully"
-        })
-    
-    });
-    
-    
-    userRouter.post('/signin', function(req, res){
-        const {email,password,} = req.body;
-
-        res.json({
-            message : "Signed In Successfully"
-        })
-    
-    });
-    
-    userRouter.get('/purchases', function(req, res){
-        res.json({
-            message : "These are the courses you have purchased"
-        })
-    
-    });
-    
- 
-
-module.exports ={
-    userRouter : userRouter
-}*/
