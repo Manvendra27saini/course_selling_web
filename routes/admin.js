@@ -6,6 +6,7 @@ const  {JWT_ADMIN_PASSWPRD} = require("../config");
 const {adminMiddleware} = require("../middleware/admin");
 
 
+
 adminRouter.post('/course/signup',async function(req, res){
     
     const { email, password, firstName, lastName } = req.body;
@@ -22,10 +23,11 @@ adminRouter.post('/course/signup',async function(req, res){
 
 adminRouter.post('/course/signin', async function(req, res){ 
     const { email, password} = req.body;
-    await adminModel.findOne({
-        email:email,
-        password:password
-    }) 
+    const admin = await adminModel.findOne({
+        email,
+        password
+    });
+    
     if(admin){
         const token = jwt.sign({
             id:admin._id,
@@ -41,7 +43,7 @@ adminRouter.post('/course/signin', async function(req, res){
     }
 });
 
-adminRouter.post('/course',adminMiddleware, async function(req, res){  
+adminRouter.post('/course' , async function(req, res){  
     const adminId =req.userId;
     const {title ,description ,price,imageUrl} =req.body;
     const course = await courseModel.create({
@@ -59,11 +61,11 @@ adminRouter.post('/course',adminMiddleware, async function(req, res){
 });
 
 
-adminRouter.put('/course',adminMiddleware ,async function(req, res){  
+adminRouter.put('/course'  ,async function(req, res){  
     const adminId =req.userId;
     const {courseId ,title, description, price ,imageUrl} =req.body;
 
-    const course =await courseModel.updateOne({
+    const course =await courseModel.findOne({
         _id : courseId,
         creatorId: adminId
     },{
@@ -80,18 +82,16 @@ adminRouter.put('/course',adminMiddleware ,async function(req, res){
 
 });
 
+adminRouter.get('/course/bulk', adminMiddleware, async function(req, res) {  
+    const adminId = req.userId;
 
-adminRouter.get('/course/bulk',adminMiddleware,async function(req, res){  
-    const adminId=req.userId;
-
-    const courses =await courseModel.find({
-        creatorId:adminId
-    })
+    const courses = await courseModel.find({
+        creatorId: adminId
+    });
     res.json({
         message: "these are all courses",
         courses
-    })
-
+    });
 });
 
 module.exports ={

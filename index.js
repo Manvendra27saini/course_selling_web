@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 console.log(process.env.MONGO_URL)
 const express = require("express");
 const mongoose = require("mongoose");
@@ -20,4 +20,4 @@ async function main() {
     console.log("listening on port 3000")
 }
 
-main()
+main();
