@@ -1,14 +1,15 @@
 const jwt = require('jsonwebtoken');
+const {JWT_ADMIN_PASSWORD} = require("../config");
 
 function adminMiddleware(req, res, next) {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.token;
 
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_ADMIN_PASSWORD);
         req.userId = decoded.id;
         next();
     } catch (err) {

@@ -8,13 +8,11 @@ const userRouter = Router();
 userRouter.post('/signup', async (req, res) => {
     try {
         const { email, password, firstName, lastName } = req.body;
-
         // Check if user already exists
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'Email already exists' });
         }
-
         // Hash password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -55,7 +53,7 @@ userRouter.post('/signin', async (req, res) => {
         }
 
         // Create a JWT token for the user (optional, for session management)
-        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_USER_PASSWORD, { expiresIn: '1h' });
 
         res.json({
             message: 'Signed in successfully',

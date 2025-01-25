@@ -1,49 +1,74 @@
 const {Router} =require("express");
+const bcrypt = require('bcryptjs');
 const adminRouter = Router();
 const { adminModel, courseModel} = require("../db");
 const jwt = require("jsonwebtoken");
-const  {JWT_ADMIN_PASSWPRD} = require("../config");
+const  {JWT_ADMIN_PASSWORD} = require("../config");
 const {adminMiddleware} = require("../middleware/admin");
 
 
 
 adminRouter.post('/course/signup',async function(req, res){
-    
-    const { email, password, firstName, lastName } = req.body;
-    await adminModel.create({
-        email:email,
-        password:password,
-        firstName:firstName,
-        lastName:lastName
-    })
-    res.json({
-        message : "Signed Up Successfully"
-    })
-});
+    try {
+        const { email, password, firstName, lastName } = req.body;
+        // Check if user already exists
+        const existingUser = await adminModel.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already exists' });
+        }
+        // Hash password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-adminRouter.post('/course/signin', async function(req, res){ 
-    const { email, password} = req.body;
-    const admin = await adminModel.findOne({
-        email,
-        password
-    });
-    
-    if(admin){
-        const token = jwt.sign({
-            id:admin._id,
-        },JWT_ADMIN_PASSWORD);
+        // Create new user
+        const newUser = await adminModel.create({
+            email,
+            password: hashedPassword,
+            firstName,
+            lastName
+        });
 
-        res.json({
-            token: token
-        })
-    }else{
-        res.status(403).json({
-            message: "Invalid Credentials"
-        })  
+        res.status(201).json({
+            message: 'Signed up successfully',
+            user: { email: newUser.email, firstName: newUser.firstName, lastName: newUser.lastName }
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error signing up user' });
     }
 });
 
-adminRouter.post('/course' , async function(req, res){  
+adminRouter.post('/course/signin', async function(req, res){ 
+    try {
+        const { email, password } = req.body;
+
+        const admin = await adminModel.findOne({ email });
+        if (!admin) {
+            return res.status(404).json({ message: 'admin not found' });
+        }
+
+        // Compare password with hashed password in the database
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+        const token = jwt.sign({ 
+            adminId: admin._id, 
+            email: admin.email 
+        }, process.env.JWT_ADMIN_PASSWORD, );
+
+        res.json({
+            message: 'Signed in successfully',
+            token: token
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error signing in' });
+    }
+});
+
+adminRouter.post('/course' , adminMiddleware, async function(req, res){  
     const adminId =req.userId;
     const {title ,description ,price,imageUrl} =req.body;
     const course = await courseModel.create({
@@ -61,7 +86,7 @@ adminRouter.post('/course' , async function(req, res){
 });
 
 
-adminRouter.put('/course'  ,async function(req, res){  
+adminRouter.put('/course' ,adminMiddleware ,async function(req, res){  
     const adminId =req.userId;
     const {courseId ,title, description, price ,imageUrl} =req.body;
 
